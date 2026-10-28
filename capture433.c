@@ -13,9 +13,9 @@ typedef struct {
 } evt_t;
 
 typedef struct {
-  double timebeteen;
+  double duration;
   int count;
-} tracked_t;
+} pulse_t;
 
 typedef struct {
   int cap;
@@ -38,8 +38,6 @@ void addEvt(evt_list_t *evt_list, evt_t event) {
   evt_list->len += 1;
   pthread_mutex_unlock(&evt_list->lock);
 }
-
-void addTime(tracked_t *tracked, uint64_t timebetween) {}
 
 int getGpioChipHandle() {
   lgChipInfo_t cInfo;
@@ -92,26 +90,30 @@ int main(int argc, char *argv[]) {
 
   pthread_mutex_lock(&evt_list.lock);
 
-  tracked_t *tracked = malloc(sizeof(tracked_t) * 5);
-  tracked[1] = (tracked_t){50.00, 0};
-  tracked[2] = (tracked_t){100.00, 0};
-  tracked[3] = (tracked_t){100.00, 0};
+  FILE *f = fopen("pulses.txt", "w");
+  if (f == NULL) {
+    printf("failed to open file");
+    exit(EXIT_FAILURE);
+  }
 
   for (int i = 1; i < evt_list.len; i++) {
     evt_t cur_evt = evt_list.evt_p[i];
     evt_t prev_evt = evt_list.evt_p[i - 1];
-    double timebetween =
-        (double)(cur_evt.timestamp - prev_evt.timestamp) / 1000.00;
+    char level;
 
-    // printf("level: %d, time between ms: %" PRIu64 " \n", cur_evt.level,
-    //        timebetween);
+    if (prev_evt.level == 1)
+      level = 'H';
+    else
+      level = 'L';
 
-    // printf("level: %d, time between ms: %f \n", cur_evt.level,
-    //        (double)cur_evt.timestamp / 1000.00);
+    uint64_t timebetween_miliseconds =
+        (cur_evt.timestamp - prev_evt.timestamp) / 1000;
 
-    printf("level: %d, time between ms: %f \n", cur_evt.level, timebetween);
+    fprintf(f, "%c : %" PRIu64 "μs\n", level, timebetween_miliseconds);
   }
 
-  printf("%d", evt_list.len);
   pthread_mutex_unlock(&evt_list.lock);
+  fclose(f);
+
+  printf("%d", evt_list.len);
 }
