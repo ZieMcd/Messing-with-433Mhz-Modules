@@ -110,6 +110,7 @@ int main(int argc, char *argv[]) {
         (cur_evt.timestamp - prev_evt.timestamp) / 1000;
 
     fprintf(f, "%c : %" PRIu64 "μs\n", level, timebetween_miliseconds);
+    fprintf(f, "%c %" PRIu64 "\n", level, timebetween_miliseconds);
   }
 
   pthread_mutex_unlock(&evt_list.lock);
